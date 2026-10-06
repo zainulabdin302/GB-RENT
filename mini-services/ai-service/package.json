@@ -1,0 +1,12 @@
+{
+  "name": "gb-rent-ai-service",
+  "version": "1.0.0",
+  "description": "GB Rent AI microservice — RandomForestRegressor + cosine k-NN for rental price prediction and similar-listing retrieval (port 3003).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts"
+  },
+  "packageManager": "bun@1.1.0"
+}

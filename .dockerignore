@@ -1,0 +1,75 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .dockerignore for the GB Rent main app
+# Keeps the Docker build context small + the image clean.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Version control + editor cruft
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+
+# Build outputs (rebuilt inside the container)
+.next
+out
+dist
+build
+
+# Dependencies (reinstalled inside the container)
+node_modules
+
+# Docker + compose files (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+DOCKER.md
+
+# Logs + runtime artifacts
+*.log
+dev.log
+server.log
+ai-service.log
+
+# Environment files (keep secrets out of the image)
+.env
+.env*
+
+# Database file (mounted as a volume at runtime, not baked in)
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# Uploaded files (mounted as a volume at runtime, not baked in)
+public/uploads/*
+!public/uploads/seed-*.jpg
+
+# OS + misc
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+*.swo
+
+# Test files (not needed in the production image)
+tests/
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Examples + skills (sandbox-only, not part of the app)
+examples/
+skills/
+download/
+
+agent-ctx/
+tool-results/
+upload/
+.zscripts/
+worklog.md
+docker-import/
+REVIEW.md

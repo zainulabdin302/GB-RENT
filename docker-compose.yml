@@ -1,0 +1,43 @@
+services:
+  ai-service:
+    image: gb-rent:local
+    build: .
+    entrypoint: ["bun"]
+    command: ["mini-services/ai-service/index.ts"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3003/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+  web:
+    image: gb-rent:local
+    build: .
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - gb-rent-uploads:/app/public/uploads
+      - gb-rent-db:/app/db
+    environment:
+      DATABASE_URL: "file:/app/db/custom.db"
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in .env}"
+      NEXTAUTH_URL: "${NEXTAUTH_URL:-http://localhost:3000}"
+      AI_SERVICE_URL: "http://ai-service:3003"
+      UPLOAD_DIR: "/app/public/uploads"
+      SEED_ON_START: "${SEED_ON_START:-false}"
+    depends_on:
+      ai-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+volumes:
+  gb-rent-uploads:
+    name: gb-rent-uploads
+  gb-rent-db:
+    name: gb-rent-db

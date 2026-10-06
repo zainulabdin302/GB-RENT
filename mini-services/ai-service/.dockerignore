@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .dockerignore for the GB Rent AI microservice
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Version control + editor cruft
+.git
+.gitignore
+.vscode
+.idea
+
+# Dependencies (the AI service has none, but be safe)
+node_modules
+bun.lock
+
+# Docker files (not needed inside the image)
+Dockerfile
+.dockerignore
+
+# Logs
+*.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp

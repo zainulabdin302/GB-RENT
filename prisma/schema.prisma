@@ -1,0 +1,130 @@
+// GB Rent — Gilgit-Baltistan Rental Marketplace
+// Prisma schema. Note: provider is SQLite for the dev/demo build.
+// To switch to PostgreSQL for production, change ONLY the datasource block:
+//   datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+// No application code changes required (Prisma abstracts the engine).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Users
+// A single user can be BOTH a renter (lister) and a tenant (searcher).
+// `role` controls admin access. `phone` is required for inquiries in GB.
+// ---------------------------------------------------------------------------
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  phone        String?
+  role         String       @default("USER") // "USER" | "ADMIN"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  properties   Property[]
+  favorites    Favorite[]
+  inquiries    Inquiry[]
+}
+
+// ---------------------------------------------------------------------------
+// Properties (Listings)
+// `status` workflow: PENDING (awaiting admin approval) -> APPROVED | REJECTED
+// Only APPROVED listings appear in public search.
+// `amenities` stored as a JSON string array (SQLite has no native array type).
+// `cityZone` is the GB city/valley (Gilgit, Hunza, Skardu, etc.) and `area` is
+// the specific neighbourhood/mohalla within that city.
+// ---------------------------------------------------------------------------
+model Property {
+  id          String          @id @default(cuid())
+  title       String
+  type        String          // "SHOP" | "HOUSE" | "ROOM" | "HOSTEL"
+  address     String
+  area        String          // neighbourhood / mohalla
+  cityZone    String          // GB city/valley
+  price       Int             // monthly rent in PKR
+  rooms       Int
+  size        Int?            // sq ft (optional)
+  amenities   String          // JSON-encoded string[] e.g. ["WATER","PARKING"]
+  description String
+  latitude    Float?
+  longitude   Float?
+  status      String          @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  images      PropertyImage[]
+  favorites   Favorite[]
+  inquiries   Inquiry[]
+
+  @@index([cityZone])
+  @@index([type])
+  @@index([status])
+  @@index([price])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Property images. `position` controls gallery ordering.
+// `url` is a relative path under /public/uploads for the dev build.
+// ---------------------------------------------------------------------------
+model PropertyImage {
+  id         String   @id @default(cuid())
+  url        String
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+// ---------------------------------------------------------------------------
+// Favorites (saved listings). Composite unique prevents duplicate saves.
+// ---------------------------------------------------------------------------
+model Favorite {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Inquiries (contact requests from tenants to listers).
+// Stored so the lister can view inbound interest in their dashboard.
+// `readAt` is null for unread inquiries and set to a timestamp once the
+// lister has viewed them (used to drive the notification dot in the header).
+// ---------------------------------------------------------------------------
+model Inquiry {
+  id         String   @id @default(cuid())
+  message    String
+  phone      String
+  createdAt  DateTime @default(now())
+  readAt     DateTime?   // null = unread → drives the Dashboard notification dot
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([userId])
+}
