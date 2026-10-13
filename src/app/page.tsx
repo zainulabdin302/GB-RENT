@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { PropertyChatbot } from "@/components/gb-rent/property-chatbot";
 import { Header } from "@/components/gb-rent/header";
 import { Footer } from "@/components/gb-rent/footer";
 import { AuthDialog } from "@/components/gb-rent/auth-dialog";
@@ -43,6 +44,7 @@ export default function Home() {
       </main>
       <Footer />
       <AuthDialog />
+      <PropertyChatbot />
     </div>
   );
 }

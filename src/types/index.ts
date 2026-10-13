@@ -85,6 +85,7 @@ export interface Paginated<T> {
 
 /** AI service contracts (mirrors mini-services/ai-service). */
 export interface PricePredictionRequest {
+  propertyId?: string;
   type: PropertyType;
   cityZone: CityZone;
   area: string;
@@ -93,14 +94,31 @@ export interface PricePredictionRequest {
   amenities: AmenityKey[];
 }
 
-export interface PricePredictionResponse {
+export interface PriceComparable {
+  id: string;
+  title: string;
+  cityZone: string;
+  area: string;
+  price: number;
+  rooms: number;
+  size: number | null;
+}
+export type PricePredictionResponse = {
+  explanation: string;
+  comparables: PriceComparable[];
+  evidence: "insufficient" | "limited" | "moderate";
+  method: "similar-listings";
+} & ({
+  available: true;
   predictedPrice: number;
   low: number;
   high: number;
-  confidence: number; // 0..1
-  features: Record<string, number | string>;
-  explanation: string;
-}
+} | {
+  available: false;
+  predictedPrice: null;
+  low: null;
+  high: null;
+});
 
 export interface SimilarPropertyRequest {
   propertyId: string;

@@ -6,12 +6,12 @@
  *   - Breadcrumb (Browse › {cityZone} › {title})
  *   - Two-column on lg+:
  *       LEFT (≈65%): gallery, main info, amenities, description,
- *                    posted-by, AI fair-price estimate, map
+ *                    posted-by, Similar-listing rent estimate, map
  *       RIGHT (≈35%, sticky): contact / inquiry card + favorites
  *   - Similar listings — full-width AI-matched section below.
  *
  * AI features:
- *   1. AI fair-price estimate — POST /api/ai/predict-price (auto-fires when
+ *   1. Similar-listing rent estimate — POST /api/ai/predict-price (auto-fires when
  *      authenticated). Shows predicted price, [low–high] range, a confidence
  *      meter (Progress bar), the model's explanation, and a colored comparison
  *      badge (good deal / near estimate / above estimate).
@@ -145,7 +145,7 @@ function priceComparison(
 ): { label: string; className: string; Icon: LucideIcon } {
   if (listed < low) {
     return {
-      label: "Below estimate — good deal",
+      label: "Below comparable asking rents",
       className:
         "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800/60",
       Icon: TrendingDown,
@@ -450,11 +450,14 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
   const openAuth = useUI((s) => s.openAuth);
 
   const query = useQuery({
-    queryKey: ["property", property.id, "predict"],
+    queryKey: ["property", property.id, "predict", property.updatedAt],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     enabled: status === "authenticated",
     retry: 1,
     queryFn: () => {
       const body: PricePredictionRequest = {
+        propertyId: property.id,
         type: property.type,
         cityZone: property.cityZone,
         area: property.area,
@@ -477,10 +480,10 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
     <CardHeader className="pb-3">
       <CardTitle className="flex items-center gap-2 text-base">
         <Sparkles className="size-4 text-primary" aria-hidden />
-        AI fair-price estimate
+        Similar-listing rent estimate
       </CardTitle>
       <CardDescription>
-        Model-predicted fair monthly rent for this listing.
+        A comparison with similar approved listings in this district.
       </CardDescription>
     </CardHeader>
   );
@@ -504,7 +507,7 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
         {headerEl}
         <CardContent className="pt-0">
           <p className="text-sm text-muted-foreground">
-            Sign in to see the model&apos;s price prediction for this listing.
+            Sign in to compare asking rents for similar listings.
           </p>
           <Button
             onClick={() => openAuth("login")}
@@ -547,7 +550,7 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
         <CardContent className="flex flex-col gap-3 pt-0">
           <p className="text-sm text-muted-foreground">
             {isUnavailable
-              ? "AI estimate unavailable right now. The AI service may be starting up — please retry in a moment."
+              ? "Rent estimate unavailable right now. Please retry in a moment."
               : err instanceof ApiError
                 ? err.message
                 : "Could not load the AI estimate."}
@@ -572,7 +575,11 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
   const data = query.data;
   if (!data) return null;
 
-  const pct = Math.max(0, Math.min(100, Math.round(data.confidence * 100)));
+  if (!data.available) return (
+    <Card className={cardClass}>{headerEl}<CardContent>
+      <p className="text-sm text-muted-foreground">{data.explanation}</p>
+    </CardContent></Card>
+  );
   const cmp = priceComparison(property.price, data.low, data.high);
   const CmpIcon = cmp.Icon;
 
@@ -584,7 +591,7 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Estimated fair rent
+              Estimated asking rent
             </p>
             <PriceTag
               price={data.predictedPrice}
@@ -592,7 +599,7 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
               className="text-3xl text-foreground"
             />
             <p className="mt-1 text-sm text-muted-foreground">
-              Range:{" "}
+              Observed range:{" "}
               <span className="font-medium text-foreground">
                 PKR {data.low.toLocaleString()}
               </span>{" "}
@@ -615,20 +622,15 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
           </Badge>
         </div>
 
-        {/* Confidence meter */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-muted-foreground">
-              Confidence
-            </span>
-            <span className="font-semibold text-foreground tabular-nums">
-              {pct}%
-            </span>
-          </div>
-          <Progress value={pct} className="h-2" aria-label="Model confidence" />
-          <p className="text-[11px] text-muted-foreground">
-            Based on how many similar training listings surround this one.
-          </p>
+        <p className="text-sm">Evidence: <strong>{data.evidence === "limited" ? "Limited — small or varied sample" : "Moderate"}</strong></p>
+        <div className="text-sm">
+          <p className="mb-2 font-medium">Listings used ({data.comparables.length})</p>
+          <ul className="space-y-2">
+            {data.comparables.map(p => <li key={p.id} className="rounded-lg border p-2">
+              <span className="font-medium">{p.title}</span><br />
+              <span className="text-xs text-muted-foreground">{p.area}, {p.cityZone} · {p.rooms} rooms{p.size ? ` · ${p.size} sqft` : ""} · PKR {p.price.toLocaleString()}/mo</span>
+            </li>)}
+          </ul>
         </div>
 
         {/* Explanation callout */}
@@ -647,7 +649,7 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
 
         {/* Footnote — FYP defense talking point */}
         <p className="text-[11px] italic text-muted-foreground">
-          Powered by RandomForest regression on GB rental data.
+          Based on similar listings in GB RENT. This is not a verified market valuation.
         </p>
       </CardContent>
     </Card>
@@ -1111,7 +1113,7 @@ export function DetailView({ propertyId }: { propertyId: string }) {
               onEdit={() => go({ name: "edit", propertyId: property.id })}
             />
 
-            {/* AI fair-price estimate */}
+            {/* Similar-listing rent estimate */}
             <AIPriceCard property={property} />
 
             {/* Map */}

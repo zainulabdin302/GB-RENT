@@ -413,6 +413,7 @@ export function CreateEditView({
   // ---- Field helpers
   const setField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
+      setAiResult(null);
       setForm((s) => ({ ...s, [field]: value }));
       setErrorFields((prev) => ({ ...prev, [field]: undefined }));
     },
@@ -420,6 +421,7 @@ export function CreateEditView({
   );
 
   const toggleAmenity = useCallback((key: AmenityKey) => {
+    setAiResult(null);
     setForm((s) => {
       const has = s.amenities.includes(key);
       return {
@@ -583,6 +585,7 @@ export function CreateEditView({
     setAiResult(null);
     try {
       const body = {
+        propertyId: mode === "edit" ? propertyId : undefined,
         type: form.type,
         cityZone: form.cityZone,
         area: form.area.trim() || "Gilgit-Baltistan",
@@ -607,7 +610,7 @@ export function CreateEditView({
   };
 
   const useSuggestedPrice = () => {
-    if (!aiResult) return;
+    if (!aiResult?.available) return;
     setField("price", String(aiResult.predictedPrice));
     setAiResult(null);
     toast.success(`Price set to PKR ${aiResult.predictedPrice.toLocaleString()}`);
@@ -1021,7 +1024,8 @@ export function CreateEditView({
               )}
 
               {/* AI callout */}
-              {aiResult && (
+              {aiResult && !aiResult.available && <p role="status" className="text-sm text-muted-foreground">{aiResult.explanation}</p>}
+              {aiResult?.available && (
                 <div
                   className="mt-1 rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-sm dark:bg-amber-900/20"
                   role="status"
@@ -1031,9 +1035,9 @@ export function CreateEditView({
                     Suggested: {formatPKRFull(aiResult.predictedPrice)}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Likely range: {formatPKRFull(aiResult.low)} – {formatPKRFull(aiResult.high)}
+                    Observed asking rents: {formatPKRFull(aiResult.low)} – {formatPKRFull(aiResult.high)}
                     {" · "}
-                    Confidence: {Math.round(aiResult.confidence * 100)}%
+                    Evidence: {aiResult.evidence} ({aiResult.comparables.length} listings)
                   </p>
                   {aiResult.explanation && (
                     <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -1422,9 +1426,10 @@ export function CreateEditView({
             )}
 
             {errorCount > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {errorCount} upload{errorCount === 1 ? "" : "s"} failed. Use Retry or remove and re-add.
-              </p>
+              <div className="text-xs text-destructive" role="alert">
+                <p>{errorCount} upload{errorCount === 1 ? "" : "s"} failed.</p>
+                <ul>{photos.filter(p => p.status === "error").map(p => <li key={p.id}>{p.fileName}: {p.errorMsg || "Upload failed. Please retry."}</li>)}</ul>
+              </div>
             )}
           </CardContent>
         </Card>

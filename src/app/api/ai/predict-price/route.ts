@@ -1,14 +1,9 @@
-/**
- * POST /api/ai/predict-price  — auth required.
- * Body: PricePredictionRequest → calls AI service `predictPrice()` →
- * returns PricePredictionResponse.
- *
- * On AI service error → 502.
- */
+/** Compare live, approved listings from the same district and property type. */
 import { NextResponse } from "next/server";
 import { jsonError, ValidationError } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/session";
-import { predictPrice } from "@/lib/ai-client";
+import { estimateRent } from "@/lib/rent-estimate";
+import { db } from "@/lib/db";
 import {
   PROPERTY_TYPES,
   CITY_ZONES,
@@ -42,7 +37,7 @@ export async function POST(req: Request) {
     if (typeof b.area !== "string" || b.area.trim().length === 0)
       throw new ValidationError("area is required");
     const rooms = Number(b.rooms);
-    if (!Number.isFinite(rooms) || rooms < 0)
+    if (!Number.isSafeInteger(rooms) || rooms < 0 || rooms > 2147483647)
       throw new ValidationError("rooms must be a non-negative number");
 
     let size: number | null = null;
@@ -63,7 +58,10 @@ export async function POST(req: Request) {
       }
     }
 
+    if (b.propertyId !== undefined && (typeof b.propertyId !== "string" || !b.propertyId.trim()))
+      throw new ValidationError("Invalid property ID");
     const request: PricePredictionRequest = {
+      propertyId: b.propertyId as string | undefined,
       type: b.type as PropertyType,
       cityZone: b.cityZone as CityZone,
       area: b.area.trim(),
@@ -72,16 +70,15 @@ export async function POST(req: Request) {
       amenities,
     };
 
-    try {
-      const response = await predictPrice(request);
-      return NextResponse.json(response);
-    } catch (e) {
-      console.error("[api/predict-price] AI service error:", e);
-      return NextResponse.json(
-        { error: "AI service unavailable. Please try again later." },
-        { status: 502 }
-      );
-    }
+    // Read live records on every request; no synthetic training set or stale model.
+    const candidates = await db.property.findMany({
+      where: { status: "APPROVED", cityZone: request.cityZone, type: request.type,
+        ...(request.propertyId ? { id: { not: request.propertyId } } : {}),
+        NOT: { images: { some: { url: { startsWith: "/uploads/seed-" } } } },
+      },
+      select: { id:true,userId:true,title:true,type:true,cityZone:true,area:true,price:true,rooms:true,size:true,amenities:true,status:true,images:{select:{url:true}} },
+    });
+    return NextResponse.json(estimateRent(request, candidates), { headers: { "Cache-Control":"no-store" } });
   } catch (e) {
     return jsonError(e);
   }
