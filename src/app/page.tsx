@@ -10,25 +10,19 @@ import { DetailView } from "@/components/gb-rent/detail-view";
 import { CreateEditView } from "@/components/gb-rent/create-edit-view";
 import { DashboardView } from "@/components/gb-rent/dashboard-view";
 import { AdminView } from "@/components/gb-rent/admin-view";
+import { ChatView } from "@/components/gb-rent/chat-view";
 
 /**
  * GB Rent — single-route SPA shell.
- *
- * The only user-visible route is "/" (per the sandbox constraint). The shell
- * renders one of five views based on the `view-store`. For a real production
- * build these would be Next.js file-based routes (/properties/[id], /dashboard,
- * /admin, /list/new) — the SPA-state approach here preserves the same UX.
+ * The shell renders a view based on the view-store.
  */
 export default function Home() {
   const current = useView((s) => s.current);
 
-  // Scroll to top whenever the view changes (mirrors route-change behaviour).
   const viewKey =
     current.name === "detail" || current.name === "edit" ? current.propertyId : "";
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
   }, [current.name, viewKey]);
 
   return (
@@ -41,6 +35,7 @@ export default function Home() {
         {current.name === "edit" && <CreateEditView mode="edit" propertyId={current.propertyId} />}
         {current.name === "dashboard" && <DashboardView />}
         {current.name === "admin" && <AdminView />}
+        {current.name === "chat" && <ChatView conversationId={current.conversationId} />}
       </main>
       <Footer />
       <AuthDialog />

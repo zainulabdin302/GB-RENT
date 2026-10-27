@@ -738,6 +738,15 @@ function ContactCard({ property }: { property: PropertyDTO }) {
   const isFav = !!property.favorited;
   const isAuthed = status === "authenticated";
 
+  const startChat = useMutation({
+    mutationFn: () => apiFetch<{ id: string }>("/api/conversations", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: property.id }),
+    }),
+    onSuccess: (conversation) => go({ name: "chat", conversationId: conversation.id }),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Couldn't start chat"),
+  });
+
   const inquiry = useMutation({
     mutationFn: (vars: { message: string; phone: string }) =>
       apiFetch<InquiryDTO>("/api/inquiries", {
@@ -909,6 +918,13 @@ function ContactCard({ property }: { property: PropertyDTO }) {
               )}
             </Button>
           </>
+        )}
+
+        {!isOwner && (
+          <Button className="w-full" disabled={startChat.isPending} onClick={() => { if (!isAuthed) { openAuth("login"); return; } startChat.mutate(); }}>
+            {startChat.isPending ? <Loader2 className="size-4 animate-spin" /> : <MessageSquare className="size-4" />}
+            Chat with owner
+          </Button>
         )}
 
         <Separator />
