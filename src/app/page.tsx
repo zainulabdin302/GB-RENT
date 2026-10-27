@@ -5,7 +5,6 @@ import { Header } from "@/components/gb-rent/header";
 import { Footer } from "@/components/gb-rent/footer";
 import { AuthDialog } from "@/components/gb-rent/auth-dialog";
 import { useView } from "@/stores/view-store";
-import { useUI } from "@/stores/ui-store";
 import { HomeView } from "@/components/gb-rent/home-view";
 import { DetailView } from "@/components/gb-rent/detail-view";
 import { CreateEditView } from "@/components/gb-rent/create-edit-view";
