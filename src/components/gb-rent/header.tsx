@@ -1,5 +1,5 @@
 "use client";
-import { Mountain, Menu, X, Home, Plus, LayoutDashboard, ShieldCheck, LogOut, User } from "lucide-react";
+import { Mountain, Menu, X, Home, Plus, LayoutDashboard, ShieldCheck, LogOut, User, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import { useView } from "@/stores/view-store";
 import { useUI } from "@/stores/ui-store";
 import { useSession, signOut } from "next-auth/react";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { NotificationDot } from "@/components/gb-rent/notification-dot";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ export function Header() {
   const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { adminPending, userUnread } = useNotifications();
+  const chatUnread = useChatNotifications();
 
   const user = session?.user;
   const isAdmin = user?.role === "ADMIN";
@@ -105,6 +107,13 @@ export function Header() {
           ))}
         </nav>
 
+        <div className="hidden md:block">
+          <Button variant={current.name === "chat" ? "secondary" : "ghost"} size="sm" onClick={() => status === "authenticated" ? go({ name: "chat" }) : openAuth("login")} className="gap-2">
+            <MessageCircle className="size-4" /> Messages
+            {chatUnread > 0 && <NotificationDot count={chatUnread} tone="amber" />}
+          </Button>
+        </div>
+
         {/* Right: auth */}
         <div className="flex items-center gap-2">
           {status === "authenticated" && user ? (
@@ -127,6 +136,10 @@ export function Header() {
                   <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => go({ name: "chat" })}>
+                  <MessageCircle className="size-4" /> Messages
+                  {chatUnread > 0 && <NotificationDot count={chatUnread} tone="amber" className="ml-auto" />}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => go({ name: "dashboard" })}>
                   <LayoutDashboard className="size-4" /> Dashboard
                   {userUnread > 0 && <NotificationDot count={userUnread} tone="amber" className="ml-auto" />}
@@ -180,6 +193,10 @@ export function Header() {
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 p-3">
+                <Button variant="ghost" className="justify-start gap-2" onClick={() => { if (status === "authenticated") go({ name: "chat" }); else openAuth("login"); setMobileOpen(false); }}>
+                  <MessageCircle className="size-4" /> <span className="flex-1 text-left">Messages</span>
+                  {chatUnread > 0 && <NotificationDot count={chatUnread} tone="amber" />}
+                </Button>
                 {navItems.map((n) => (
                   <Button
                     key={n.name}

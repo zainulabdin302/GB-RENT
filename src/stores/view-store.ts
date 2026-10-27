@@ -7,7 +7,7 @@
  * the browser Back button still works conceptually within the app.
  *
  * For FYP: explain that a real production build would use Next.js file-based
- * routing (/properties/[id], /dashboard, /admin). The SPA-state approach here
+ * routing (/properties/[id], /dashboard, /admin, /list/new). The SPA-state approach here
  * keeps the sandbox to ONE user route per the platform constraint while still
  * demonstrating every page.
  */
@@ -19,7 +19,8 @@ export type View =
   | { name: "create" }
   | { name: "edit"; propertyId: string }
   | { name: "dashboard" }
-  | { name: "admin" };
+  | { name: "admin" }
+  | { name: "chat"; conversationId?: string };
 
 interface NavState {
   stack: View[];

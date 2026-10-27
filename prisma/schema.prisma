@@ -31,6 +31,9 @@ model User {
   properties   Property[]
   favorites    Favorite[]
   inquiries    Inquiry[]
+  renterConversations Conversation[] @relation("ConversationRenter")
+  ownerConversations  Conversation[] @relation("ConversationOwner")
+  sentMessages Message[]
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +68,7 @@ model Property {
   images      PropertyImage[]
   favorites   Favorite[]
   inquiries   Inquiry[]
+  conversations Conversation[]
 
   @@index([cityZone])
   @@index([type])
@@ -117,7 +121,7 @@ model Inquiry {
   message    String
   phone      String
   createdAt  DateTime @default(now())
-  readAt     DateTime?   // null = unread → drives the Dashboard notification dot
+  readAt     DateTime?
 
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -127,4 +131,38 @@ model Inquiry {
 
   @@index([propertyId])
   @@index([userId])
+}
+
+// Private renter-owner conversations linked to individual rental properties.
+model Conversation {
+  id         String   @id @default(cuid())
+  propertyId String
+  renterId   String
+  ownerId    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  renter   User     @relation("ConversationRenter", fields: [renterId], references: [id], onDelete: Cascade)
+  owner    User     @relation("ConversationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([propertyId, renterId])
+  @@index([renterId, updatedAt])
+  @@index([ownerId, updatedAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime @default(now())
+  readAt         DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, readAt])
 }
