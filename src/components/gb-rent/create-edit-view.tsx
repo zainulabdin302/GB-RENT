@@ -285,8 +285,12 @@ function validate(
     });
 
   const roomsNum = Number(form.rooms);
-  if (form.rooms === "" || !Number.isFinite(roomsNum) || roomsNum < 0 || roomsNum > MAX_ROOMS)
+  if (
+    form.type === "HOUSE" &&
+    (form.rooms === "" || !Number.isFinite(roomsNum) || roomsNum < 0 || roomsNum > MAX_ROOMS)
+  ) {
     errors.push({ field: "rooms", message: `Rooms must be a number between 0 and ${MAX_ROOMS}` });
+  }
 
   if (form.size && (Number.isNaN(Number(form.size)) || Number(form.size) < 0))
     errors.push({ field: "size", message: "Size must be a non-negative number" });
@@ -377,7 +381,7 @@ export function CreateEditView({
           area: prop.area,
           cityZone: prop.cityZone,
           price: String(prop.price),
-          rooms: String(prop.rooms),
+          rooms: prop.type === "HOUSE" ? String(prop.rooms) : "0",
           size: prop.size != null ? String(prop.size) : "",
           amenities: prop.amenities,
           description: prop.description,
@@ -858,7 +862,11 @@ export function CreateEditView({
               </Label>
               <RadioGroup
                 value={form.type}
-                onValueChange={(v) => setField("type", v as PropertyType)}
+                onValueChange={(v) => {
+                  const type = v as PropertyType;
+                  setField("type", type);
+                  setField("rooms", type === "HOUSE" ? "" : "0");
+                }}
                 className="grid grid-cols-2 gap-2 sm:grid-cols-4"
                 ref={registerFieldRef("type") as React.Ref<HTMLDivElement>}
                 aria-invalid={!!errorFields.type}
@@ -1069,7 +1077,10 @@ export function CreateEditView({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="rooms">
-                  Number of rooms <span className="text-destructive">*</span>
+                  Number of rooms
+                  {form.type === "HOUSE" && (
+                    <span className="text-destructive"> *</span>
+                  )}
                 </Label>
                 <Input
                   id="rooms"
@@ -1078,12 +1089,13 @@ export function CreateEditView({
                   min={0}
                   max={MAX_ROOMS}
                   step={1}
+                  disabled={form.type !== "HOUSE"}
                   ref={registerFieldRef("rooms") as React.Ref<HTMLInputElement>}
                   value={form.rooms}
-                  placeholder="e.g. 3"
+                  placeholder={form.type === "HOUSE" ? "e.g. 3" : "Not required for this property type"}
                   aria-invalid={!!errorFields.rooms}
                   aria-describedby={errorFields.rooms ? "rooms-error" : undefined}
-                  className={inputCls("rooms")}
+                  className={cn(inputCls("rooms"), "disabled:cursor-not-allowed disabled:opacity-50")}
                   onChange={(e) => setField("rooms", e.target.value)}
                 />
                 {errorFields.rooms && (
