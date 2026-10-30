@@ -446,8 +446,13 @@ function PostedByBlock({
 // ─── AI: price prediction ─────────────────────────────────────────────────
 
 function AIPriceCard({ property }: { property: PropertyDTO }) {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const openAuth = useUI((s) => s.openAuth);
+  const go = useView((s) => s.go);
+  const [offerPrice, setOfferPrice] = useState<number | null>(null);
+  const [offerMessage, setOfferMessage] = useState(
+    "Hello! I'm interested in your property. Would you consider this monthly rent?"
+  );
 
   const query = useQuery({
     queryKey: ["property", property.id, "predict", property.updatedAt],
@@ -470,6 +475,33 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
         body: JSON.stringify(body),
       });
     },
+  });
+
+  const sendEstimate = useMutation({
+    mutationFn: async (vars: { estimate: number; offer: number; note: string }) => {
+      const conversation = await apiFetch<{ id: string }>("/api/conversations", {
+        method: "POST",
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+      const content = [
+        "AI RENT ESTIMATE & RENT OFFER",
+        `Property: ${property.title}`,
+        `Listed monthly rent: PKR ${property.price.toLocaleString("en-PK")}`,
+        `GB-RENT AI estimated monthly rent: PKR ${vars.estimate.toLocaleString("en-PK")}`,
+        `My proposed monthly rent: PKR ${vars.offer.toLocaleString("en-PK")}`,
+        vars.note ? `Message: ${vars.note}` : "",
+      ].filter(Boolean).join("\\n");
+      await apiFetch(`/api/conversations/${encodeURIComponent(conversation.id)}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      });
+      return conversation;
+    },
+    onSuccess: (conversation) => {
+      toast.success("Your AI rent estimate and offer were sent to the owner");
+      go({ name: "chat", conversationId: conversation.id });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Couldn't send your rent offer"),
   });
 
   // Card chrome — reused across all states.
@@ -651,6 +683,77 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
         <p className="text-[11px] italic text-muted-foreground">
           Based on similar listings in GB RENT. This is not a verified market valuation.
         </p>
+
+        {session?.user?.id !== property.userId && (
+          <div className="rounded-xl border bg-background/80 p-3">
+            <div className="mb-3">
+              <p className="text-sm font-semibold">Send this AI estimate to the owner</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Review the AI estimate, choose your own offer, and edit your message before sending.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor={`ai-estimate-${property.id}`} className="text-xs font-medium text-muted-foreground">
+                  AI estimated rent (PKR/month)
+                </label>
+                <Input id={`ai-estimate-${property.id}`} value={data.predictedPrice.toLocaleString("en-PK")} readOnly />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor={`rent-offer-${property.id}`} className="text-xs font-medium text-muted-foreground">
+                  Your proposed rent (PKR/month)
+                </label>
+                <Input
+                  id={`rent-offer-${property.id}`}
+                  type="number"
+                  min={1}
+                  max={2147483647}
+                  step={1}
+                  value={offerPrice ?? data.predictedPrice}
+                  onChange={(event) => setOfferPrice(event.target.value === "" ? null : Number(event.target.value))}
+                  disabled={sendEstimate.isPending}
+                />
+              </div>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <label htmlFor={`rent-offer-message-${property.id}`} className="text-xs font-medium text-muted-foreground">
+                Message to owner (editable)
+              </label>
+              <Textarea
+                id={`rent-offer-message-${property.id}`}
+                value={offerMessage}
+                onChange={(event) => setOfferMessage(event.target.value)}
+                rows={3}
+                maxLength={1200}
+                disabled={sendEstimate.isPending}
+              />
+            </div>
+            <Button
+              className="mt-3 w-full"
+              disabled={sendEstimate.isPending || !Number.isSafeInteger(offerPrice ?? data.predictedPrice) || (offerPrice ?? data.predictedPrice) < 1}
+              onClick={() => {
+                if (status !== "authenticated") {
+                  openAuth("login");
+                  return;
+                }
+                sendEstimate.mutate({
+                  estimate: data.predictedPrice,
+                  offer: offerPrice ?? data.predictedPrice,
+                  note: offerMessage.trim(),
+                });
+              }}
+            >
+              {sendEstimate.isPending ? (
+                <><Loader2 className="size-4 animate-spin" /> Sending…</>
+              ) : (
+                <><MessageSquare className="size-4" /> Send AI estimate to owner</>
+              )}
+            </Button>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              The owner receives the original AI estimate and your proposed rent as a message in your private chat. The AI estimate is not changed by your offer.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
