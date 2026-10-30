@@ -344,7 +344,7 @@ function ListingRow({ item }: { item: MinePropertyDTO }) {
           </AlertDialog>
         </div>
       </div>
-      {item.status === "APPROVED" && item.paymentStatus !== "VERIFIED" && <ListingPaymentPanel propertyId={item.id} />}
+      {item.status === "PENDING" && item.paymentStatus !== "VERIFIED" && <ListingPaymentPanel propertyId={item.id} />}
     </Card>
   );
 }
