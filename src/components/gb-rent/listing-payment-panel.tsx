@@ -31,7 +31,7 @@ export function ListingPaymentPanel({ propertyId }: { propertyId: string }) {
   const p = info.data;
   if (p.paymentStatus === "VERIFIED") return null;
   return <Card className="mx-4 mb-4 border-primary/20 bg-muted/20"><CardContent className="space-y-3 p-4">
-    <div><div className="font-semibold">Listing payment · PKR {p.amount.toLocaleString("en-PK")}</div><p className="text-sm text-muted-foreground">Your listing is approved. Complete payment and submit the receipt; it will be published after verification.</p></div>
+    <div><div className="font-semibold">Listing payment · PKR {p.amount.toLocaleString("en-PK")}</div><p className="text-sm text-muted-foreground">Pay the listing fee and upload your receipt now. Your property will remain pending until an admin verifies the payment and separately approves the listing.</p></div>
     <div className="grid gap-2 text-sm sm:grid-cols-2">
       <div><span className="font-medium">JazzCash:</span> {p.jazzCashAccount || "Not configured yet"}</div>
       <div><span className="font-medium">Easypaisa:</span> {p.easypaisaAccount || "Not configured yet"}</div>
