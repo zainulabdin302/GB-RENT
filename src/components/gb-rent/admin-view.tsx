@@ -720,7 +720,7 @@ function ListingsTableRow({
                 variant="outline"
                 size="sm"
                 onClick={() => approve.mutate()}
-                disabled={approve.isPending || reject.isPending || del.isPending}
+                disabled={p.paymentStatus !== "VERIFIED" || approve.isPending || reject.isPending || del.isPending}
                 className="gap-1.5 border-emerald-300/60 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
               >
                 {approve.isPending ? (
@@ -728,7 +728,7 @@ function ListingsTableRow({
                 ) : (
                   <Check className="size-4" />
                 )}
-                Approve
+                {p.paymentStatus === "VERIFIED" ? "Approve Property" : "Verify Payment First"}
               </Button>
               <Button
                 variant="outline"
