@@ -15,14 +15,14 @@ export function AdminPaymentsView() {
   const qc = useQueryClient();
   const settings = useQuery<Settings>({ queryKey: ["admin-payment-settings"], queryFn: () => apiFetch("/api/admin/payment-settings") });
   const payments = useQuery<Payment[]>({ queryKey: ["admin-payments"], queryFn: () => apiFetch("/api/admin/payments") });
-  const [fee, setFee] = useState("");
-  const [jazz, setJazz] = useState("");
-  const [easy, setEasy] = useState("");
+  const [fee, setFee] = useState<string | null>(null);
+  const [jazz, setJazz] = useState<string | null>(null);
+  const [easy, setEasy] = useState<string | null>(null);
   const save = useMutation({
     mutationFn: () => apiFetch("/api/admin/payment-settings", { method: "PATCH", body: JSON.stringify({
-      listingFee: Number(fee || settings.data?.listingFee || 200),
-      jazzCashAccount: jazz || settings.data?.jazzCashAccount || "",
-      easypaisaAccount: easy || settings.data?.easypaisaAccount || ""
+      listingFee: fee === null ? (settings.data?.listingFee ?? 200) : Number(fee),
+      jazzCashAccount: jazz === null ? (settings.data?.jazzCashAccount ?? "") : jazz,
+      easypaisaAccount: easy === null ? (settings.data?.easypaisaAccount ?? "") : easy
     }) }),
     onSuccess: () => { toast.success("Settings saved"); qc.invalidateQueries({ queryKey: ["admin-payment-settings"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save settings")
@@ -35,9 +35,9 @@ export function AdminPaymentsView() {
   return <div className="flex flex-col gap-6">
     <Card><CardHeader><CardTitle>Listing payment settings</CardTitle><CardDescription>New approvals use this fee. Existing payment requests keep their saved amount.</CardDescription></CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2"><Label>Listing fee (PKR)</Label><Input type="number" min="0" value={fee || settings.data?.listingFee || ""} onChange={e => setFee(e.target.value)} /></div>
-        <div className="space-y-2"><Label>JazzCash account / number</Label><Input value={jazz || settings.data?.jazzCashAccount || ""} onChange={e => setJazz(e.target.value)} /></div>
-        <div className="space-y-2"><Label>Easypaisa account / number</Label><Input value={easy || settings.data?.easypaisaAccount || ""} onChange={e => setEasy(e.target.value)} /></div>
+        <div className="space-y-2"><Label>Listing fee (PKR)</Label><Input type="number" min="0" value={fee ?? settings.data?.listingFee ?? ""} onChange={e => setFee(e.target.value)} /></div>
+        <div className="space-y-2"><Label>JazzCash account / number</Label><Input value={jazz ?? settings.data?.jazzCashAccount ?? ""} onChange={e => setJazz(e.target.value)} /></div>
+        <div className="space-y-2"><Label>Easypaisa account / number</Label><Input value={easy ?? settings.data?.easypaisaAccount ?? ""} onChange={e => setEasy(e.target.value)} /></div>
         <div className="flex items-end"><Button onClick={() => save.mutate()} disabled={save.isPending}>Save settings</Button></div>
       </CardContent>
     </Card>
