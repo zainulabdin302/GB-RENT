@@ -16,7 +16,7 @@ export interface RentalCandidate {
 }
 
 const norm = (value: string) =>
-  value.trim().toLowerCase().replace(/\\s+/g, " ");
+  value.trim().toLowerCase().replace(/\s+/g, " ");
 
 function parseAmenities(value: string): string[] {
   try {
