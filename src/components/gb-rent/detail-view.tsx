@@ -490,7 +490,7 @@ function AIPriceCard({ property }: { property: PropertyDTO }) {
         `GB-RENT AI estimated monthly rent: PKR ${vars.estimate.toLocaleString("en-PK")}`,
         `My proposed monthly rent: PKR ${vars.offer.toLocaleString("en-PK")}`,
         vars.note ? `Message: ${vars.note}` : "",
-      ].filter(Boolean).join("\\n");
+      ].filter(Boolean).join("\n");
       await apiFetch(`/api/conversations/${encodeURIComponent(conversation.id)}/messages`, {
         method: "POST",
         body: JSON.stringify({ content }),
