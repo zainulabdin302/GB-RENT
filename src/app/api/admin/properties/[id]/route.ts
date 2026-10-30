@@ -41,9 +41,24 @@ export async function PATCH(
     });
     if (!existing) throw new NotFoundError("Property not found");
 
+    const settings = await db.platformSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default" },
+      update: {},
+    });
     const updated = await db.property.update({
       where: { id },
-      data: { status: status as "APPROVED" | "REJECTED" },
+      data: status === "APPROVED"
+        ? {
+            status: "APPROVED",
+            paymentStatus: "UNPAID",
+            listingFeeSnapshot: settings.listingFee,
+            paymentReceiptUrl: null,
+            paymentReference: null,
+            paymentSubmittedAt: null,
+            paymentVerifiedAt: null,
+          }
+        : { status: "REJECTED" },
       include: {
         images: { orderBy: { position: "asc" } },
         user: { select: { id: true, name: true, email: true, phone: true } },
