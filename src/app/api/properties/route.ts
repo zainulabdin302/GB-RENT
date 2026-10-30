@@ -241,6 +241,12 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const input = validatePropertyInput(body);
 
+    const settings = await db.platformSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default" },
+      update: {},
+    });
+
     const property = await db.property.create({
       data: {
         title: input.title,
@@ -257,6 +263,7 @@ export async function POST(req: Request) {
         longitude: input.longitude,
         status: "PENDING",
         paymentStatus: "UNPAID",
+        listingFeeSnapshot: settings.listingFee,
         userId: ctx.user.id,
         images: {
           create: input.images.map((url, i) => ({
