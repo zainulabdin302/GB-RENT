@@ -29,11 +29,11 @@ export function AdminPaymentsView() {
   });
   const review = useMutation({
     mutationFn: (v: { id: string; action: "VERIFY" | "REJECT" }) => apiFetch("/api/admin/payments/" + v.id, { method: "PATCH", body: JSON.stringify({ action: v.action }) }),
-    onSuccess: () => { toast.success("Payment updated"); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["properties"] }); },
+    onSuccess: () => { toast.success("Payment updated"); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["properties"] }); qc.invalidateQueries({ queryKey: ["admin-properties"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update payment")
   });
   return <div className="flex flex-col gap-6">
-    <Card><CardHeader><CardTitle>Listing payment settings</CardTitle><CardDescription>New approvals use this fee. Existing payment requests keep their saved amount.</CardDescription></CardHeader>
+    <Card><CardHeader><CardTitle>Listing payment settings</CardTitle><CardDescription>New property submissions use this fee. Existing listings keep their saved amount.</CardDescription></CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2"><Label>Listing fee (PKR)</Label><Input type="number" min="0" value={fee ?? settings.data?.listingFee ?? ""} onChange={e => setFee(e.target.value)} /></div>
         <div className="space-y-2"><Label>JazzCash account / number</Label><Input value={jazz ?? settings.data?.jazzCashAccount ?? ""} onChange={e => setJazz(e.target.value)} /></div>
