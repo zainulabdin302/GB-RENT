@@ -105,6 +105,7 @@ import {
 
 import { EmptyState } from "@/components/gb-rent/empty-state";
 import { TypeBadge } from "@/components/gb-rent/type-badge";
+import { AdminPaymentsView } from "@/components/gb-rent/admin-payments-view";
 
 import type { Paginated, PropertyDTO, UserDTO } from "@/types";
 
@@ -1180,7 +1181,7 @@ export function AdminView() {
             <Building2 className="size-4" />
             Listings
           </TabsTrigger>
-          <TabsTrigger value="users" className="gap-1.5">
+          <TabsTrigger value="payments" className="gap-1.5">\n            Payments\n          </TabsTrigger>\n          <TabsTrigger value="users" className="gap-1.5">
             <Users className="size-4" />
             Users
           </TabsTrigger>
@@ -1192,7 +1193,7 @@ export function AdminView() {
         <TabsContent value="listings" className="mt-6">
           <ListingsTab />
         </TabsContent>
-        <TabsContent value="users" className="mt-6">
+        <TabsContent value="payments" className="mt-6">\n          <AdminPaymentsView />\n        </TabsContent>\n        <TabsContent value="users" className="mt-6">
           <UsersTab currentAdminId={session.user.id} />
         </TabsContent>
       </Tabs>
