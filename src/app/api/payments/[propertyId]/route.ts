@@ -41,7 +41,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ propertyId: st
     }
     const property = await db.property.findUnique({ where: { id: propertyId } });
     if (!property || property.userId !== auth.user.id) throw new NotFoundError("Listing not found");
-    if (property.status !== "APPROVED") throw new ValidationError("Your listing must be approved before payment");
+    if (property.status !== "PENDING") throw new ValidationError("Payment can only be submitted while your listing is pending admin review");
     if (property.paymentStatus === "VERIFIED") throw new ValidationError("Payment is already verified");
     const duplicate = await db.property.findFirst({
       where: { paymentReference: reference.trim(), NOT: { id: propertyId } },
