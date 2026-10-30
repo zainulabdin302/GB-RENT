@@ -71,6 +71,7 @@ import { PropertyCard } from "@/components/gb-rent/property-card";
 import { EmptyState } from "@/components/gb-rent/empty-state";
 import { TypeBadge } from "@/components/gb-rent/type-badge";
 import { PriceTag } from "@/components/gb-rent/price-tag";
+import { ListingPaymentPanel } from "@/components/gb-rent/listing-payment-panel";
 
 import type { PropertyDTO, FavoriteDTO, InquiryDTO } from "@/types";
 
@@ -343,6 +344,7 @@ function ListingRow({ item }: { item: MinePropertyDTO }) {
           </AlertDialog>
         </div>
       </div>
+      {item.status === "APPROVED" && item.paymentStatus !== "VERIFIED" && <ListingPaymentPanel propertyId={item.id} />}
     </Card>
   );
 }
