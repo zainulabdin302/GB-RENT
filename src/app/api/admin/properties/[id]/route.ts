@@ -37,28 +37,17 @@ export async function PATCH(
 
     const existing = await db.property.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, paymentStatus: true },
     });
     if (!existing) throw new NotFoundError("Property not found");
 
-    const settings = await db.platformSettings.upsert({
-      where: { id: "default" },
-      create: { id: "default" },
-      update: {},
-    });
+    if (status === "APPROVED" && existing.paymentStatus !== "VERIFIED") {
+      throw new ValidationError("Verify the listing payment before approving this property");
+    }
+
     const updated = await db.property.update({
       where: { id },
-      data: status === "APPROVED"
-        ? {
-            status: "APPROVED",
-            paymentStatus: "UNPAID",
-            listingFeeSnapshot: settings.listingFee,
-            paymentReceiptUrl: null,
-            paymentReference: null,
-            paymentSubmittedAt: null,
-            paymentVerifiedAt: null,
-          }
-        : { status: "REJECTED" },
+      data: status === "APPROVED" ? { status: "APPROVED" } : { status: "REJECTED" },
       include: {
         images: { orderBy: { position: "asc" } },
         user: { select: { id: true, name: true, email: true, phone: true } },
