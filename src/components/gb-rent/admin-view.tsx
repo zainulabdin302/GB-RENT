@@ -105,6 +105,7 @@ import {
 
 import { EmptyState } from "@/components/gb-rent/empty-state";
 import { TypeBadge } from "@/components/gb-rent/type-badge";
+import { AdminPaymentsView } from "@/components/gb-rent/admin-payments-view";
 
 import type { Paginated, PropertyDTO, UserDTO } from "@/types";
 
@@ -719,7 +720,7 @@ function ListingsTableRow({
                 variant="outline"
                 size="sm"
                 onClick={() => approve.mutate()}
-                disabled={approve.isPending || reject.isPending || del.isPending}
+                disabled={p.paymentStatus !== "VERIFIED" || approve.isPending || reject.isPending || del.isPending}
                 className="gap-1.5 border-emerald-300/60 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
               >
                 {approve.isPending ? (
@@ -727,7 +728,7 @@ function ListingsTableRow({
                 ) : (
                   <Check className="size-4" />
                 )}
-                Approve
+                {p.paymentStatus === "VERIFIED" ? "Approve Property" : "Verify Payment First"}
               </Button>
               <Button
                 variant="outline"
@@ -1180,7 +1181,7 @@ export function AdminView() {
             <Building2 className="size-4" />
             Listings
           </TabsTrigger>
-          <TabsTrigger value="users" className="gap-1.5">
+          <TabsTrigger value="payments" className="gap-1.5">\n            Payments\n          </TabsTrigger>\n          <TabsTrigger value="users" className="gap-1.5">
             <Users className="size-4" />
             Users
           </TabsTrigger>
@@ -1192,7 +1193,7 @@ export function AdminView() {
         <TabsContent value="listings" className="mt-6">
           <ListingsTab />
         </TabsContent>
-        <TabsContent value="users" className="mt-6">
+        <TabsContent value="payments" className="mt-6">\n          <AdminPaymentsView />\n        </TabsContent>\n        <TabsContent value="users" className="mt-6">
           <UsersTab currentAdminId={session.user.id} />
         </TabsContent>
       </Tabs>

@@ -37,6 +37,12 @@ export interface PropertyDTO {
   latitude: number | null;
   longitude: number | null;
   status: PropertyStatus;
+  paymentStatus: "UNPAID" | "PENDING_VERIFICATION" | "REJECTED" | "VERIFIED";
+  listingFeeSnapshot: number;
+  paymentReceiptUrl: string | null;
+  paymentReference: string | null;
+  paymentSubmittedAt: string | null;
+  paymentVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
   userId: string;

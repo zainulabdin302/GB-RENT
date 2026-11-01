@@ -59,6 +59,12 @@ model Property {
   latitude    Float?
   longitude   Float?
   status      String          @default("PENDING") // PENDING | APPROVED | REJECTED
+  paymentStatus String        @default("VERIFIED") // VERIFIED is the legacy-listing default
+  listingFeeSnapshot Int      @default(0)
+  paymentReceiptUrl String?
+  paymentReference String?
+  paymentSubmittedAt DateTime?
+  paymentVerifiedAt DateTime?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -165,4 +171,14 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@index([conversationId, readAt])
+}
+
+
+// Platform-wide payment instructions. The "default" row is created on demand.
+model PlatformSettings {
+  id               String   @id @default("default")
+  listingFee       Int      @default(200)
+  jazzCashAccount  String   @default("")
+  easypaisaAccount String   @default("")
+  updatedAt        DateTime @updatedAt
 }

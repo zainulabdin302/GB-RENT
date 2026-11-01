@@ -49,7 +49,7 @@ export async function GET(
     const property = await loadProperty(id);
     if (!property) throw new NotFoundError("Property not found");
 
-    if (property.status !== "APPROVED") {
+    if (property.status !== "APPROVED" || property.paymentStatus !== "VERIFIED") {
       // Only owner or admin may see non-approved listings.
       const auth = await getAuth();
       const isOwner = auth?.user.id === property.userId;

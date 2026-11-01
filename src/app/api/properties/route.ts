@@ -47,7 +47,7 @@ const PROPERTY_TYPE_SET = new Set<string>(PROPERTY_TYPES);
 const CITY_ZONE_SET = new Set<string>(CITY_ZONES);
 
 function buildSearchWhere(params: URLSearchParams) {
-  const where: Prisma.PropertyWhereInput = { status: "APPROVED" };
+  const where: Prisma.PropertyWhereInput = { status: "APPROVED", paymentStatus: "VERIFIED" };
 
   const q = params.get("q");
   if (q && q.trim()) {
@@ -241,6 +241,12 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const input = validatePropertyInput(body);
 
+    const settings = await db.platformSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default" },
+      update: {},
+    });
+
     const property = await db.property.create({
       data: {
         title: input.title,
@@ -256,6 +262,8 @@ export async function POST(req: Request) {
         latitude: input.latitude,
         longitude: input.longitude,
         status: "PENDING",
+        paymentStatus: "UNPAID",
+        listingFeeSnapshot: settings.listingFee,
         userId: ctx.user.id,
         images: {
           create: input.images.map((url, i) => ({
